@@ -194,3 +194,7 @@ def build_korea_svg(region_agg: pd.DataFrame, selected_region: str | None = None
     </div>
     '''
     return svg
+def chart_series(surface: pd.DataFrame, rootzone: pd.DataFrame, col: str, as_of: pd.Timestamp, days: int = 60):
+    s = surface[surface["TIME"] <= as_of][["TIME", col]].tail(days)
+    r = rootzone[rootzone["TIME"] <= as_of][["TIME", col]].tail(days)
+    return s.rename(columns={col: "value"}), r.rename(columns={col: "value"})
