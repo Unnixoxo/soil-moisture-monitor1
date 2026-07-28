@@ -11,10 +11,12 @@ import glob
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
+import streamlit.components.v1 as components
 
 from data_processing import (
     FORECAST_DAYS,
     LEVELS,
+    build_korea_svg,
     chart_series,
     compute_stats,
     load_surface_rootzone,
@@ -73,28 +75,17 @@ with tab1:
 
     st.subheader("권역별 토양수분 현황 (실측)")
     ragg = region_summary(stats)
+    svg_html = build_korea_svg(ragg)
+    components.html(svg_html, height=560)
+    st.caption("원 크기 = 권역 내 유역 수, % = 권역 평균 백분위 (빨강=건조 ~ 파랑=습윤)")
 
-    fig = go.Figure(go.Scattergeo(
-        lat=ragg["lat"], lon=ragg["lon"],
-        text=ragg.apply(lambda r: f"{r['region']} ({r['provinces']})<br>평균 백분위 {r['avg_pct']}%<br>{r['n']}개 유역", axis=1),
-        marker=dict(
-            size=ragg["n"] ** 0.5 * 3 + 12,
-            color=ragg["avg_pct"],
-            colorscale=[[0, "#dc2626"], [0.25, "#f97316"], [0.45, "#eab308"], [0.7, "#84cc16"], [1, "#3b82f6"]],
-            cmin=0, cmax=100,
-            line=dict(width=1.5, color="white"),
-            colorbar=dict(title="백분위(%)"),
-        ),
-        hoverinfo="text",
-    ))
-    fig.update_geos(
-        scope="asia", center=dict(lat=36.3, lon=127.8), projection_scale=13,
-        showland=True, landcolor="#eef1f0", showcountries=False, showcoastlines=True,
-        coastlinecolor="#cbd5e1", showlakes=False,
-    )
-    fig.update_layout(height=480, margin=dict(l=0, r=0, t=0, b=0))
-    st.plotly_chart(fig, use_container_width=True)
-    st.caption("원 크기 = 권역 내 유역 수, 색 = 권역 평균 백분위 (빨강=건조 ~ 파랑=습윤)")
+    with st.expander("권역별 상세 수치 보기"):
+        st.dataframe(
+            ragg[["region", "provinces", "n", "avg_pct"]].rename(columns={
+                "region": "권역", "provinces": "포함 시도", "n": "유역 수", "avg_pct": "평균 백분위(%)",
+            }),
+            use_container_width=True, hide_index=True,
+        )
 
 # ── 탭 2: AI 위험예측 ──────────────────────────────────
 with tab2:
