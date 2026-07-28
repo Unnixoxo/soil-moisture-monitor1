@@ -78,7 +78,9 @@ with tab1:
 
     # 지도의 원을 클릭하면 URL에 ?region=권역명 이 붙어서 여기로 전달됨
     clicked_region = st.query_params.get("region")
+    st.caption(f"🔧 디버그: 현재 URL 쿼리 파라미터 = {dict(st.query_params)}")  # 문제 해결되면 이 줄 삭제
     if clicked_region not in ragg["region"].values:
+        st.caption(f"🔧 디버그: '{clicked_region}' 이(가) 권역 목록과 일치하지 않음. 목록: {list(ragg['region'].values)}")
         clicked_region = None
 
     map_col, detail_col = st.columns([3, 2])
