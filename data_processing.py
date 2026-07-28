@@ -157,7 +157,8 @@ def _load_json(name):
 
 def build_korea_svg(region_agg: pd.DataFrame, selected_region: str | None = None) -> str:
     """실제 대한민국 행정구역 SVG(오픈소스) 위에 권역별 원을 그려 넣습니다.
-    원 위치는 위경도 기반 아핀 변환으로 계산된 실제 지리 좌표입니다."""
+    원 위치는 위경도 기반 아핀 변환으로 계산된 실제 지리 좌표입니다.
+    각 원은 클릭 가능한 링크로 감싸져 있어(쿼리 파라미터 방식), 클릭 시 해당 권역이 선택됩니다."""
     province_paths = _load_json("korea_province_paths.json")
     positions = _load_json("region_positions.json")
 
@@ -178,11 +179,15 @@ def build_korea_svg(region_agg: pd.DataFrame, selected_region: str | None = None
         if active:
             r = 28
         stroke_w = 3 if active else 2
+        import urllib.parse
+        href = "?region=" + urllib.parse.quote(name)
         markers.append(f'''
+        <a href="{href}" target="_top" style="cursor:pointer;">
           <circle cx="{x}" cy="{y}" r="{r}" fill="{color}" opacity="{1 if active else 0.85}" stroke="#fff" stroke-width="{stroke_w}"/>
           <text x="{x}" y="{y-30}" text-anchor="middle" font-size="15" font-weight="700" fill="#1e293b" font-family="sans-serif">{name.replace('권역','')}</text>
           <text x="{x}" y="{y-16}" text-anchor="middle" font-size="10" font-weight="500" fill="#64748b" font-family="sans-serif">({REGION_PROVINCES.get(name,'')})</text>
           <text x="{x}" y="{y+5}" text-anchor="middle" font-size="12" font-weight="700" fill="#fff" font-family="sans-serif">{pct}%</text>
+        </a>
         ''')
 
     svg = f'''
@@ -194,6 +199,8 @@ def build_korea_svg(region_agg: pd.DataFrame, selected_region: str | None = None
     </div>
     '''
     return svg
+
+
 def chart_series(surface: pd.DataFrame, rootzone: pd.DataFrame, col: str, as_of: pd.Timestamp, days: int = 60):
     s = surface[surface["TIME"] <= as_of][["TIME", col]].tail(days)
     r = rootzone[rootzone["TIME"] <= as_of][["TIME", col]].tail(days)
