@@ -76,18 +76,15 @@ with tab1:
     st.subheader("권역별 토양수분 현황 (실측)")
     ragg = region_summary(stats)
 
-    # 지도의 원을 클릭하면 URL에 ?region=권역명 이 붙어서 여기로 전달됨
-    clicked_region = st.query_params.get("region")
-    st.caption(f"🔧 디버그: 현재 URL 쿼리 파라미터 = {dict(st.query_params)}")  # 문제 해결되면 이 줄 삭제
-    if clicked_region not in ragg["region"].values:
-        st.caption(f"🔧 디버그: '{clicked_region}' 이(가) 권역 목록과 일치하지 않음. 목록: {list(ragg['region'].values)}")
-        clicked_region = None
+    region_options = ["(선택 안 함)"] + list(ragg["region"])
+    picked = st.selectbox("권역 선택 (지도에서 강조 표시됩니다)", region_options, key="region_picker")
+    clicked_region = picked if picked != "(선택 안 함)" else None
 
     map_col, detail_col = st.columns([3, 2])
     with map_col:
         svg_html = build_korea_svg(ragg, selected_region=clicked_region)
         components.html(svg_html, height=560)
-        st.caption("원 크기 = 권역 내 유역 수, % = 권역 평균 백분위 (빨강=건조 ~ 파랑=습윤) · 원을 클릭하면 상세 정보가 표시됩니다")
+        st.caption("원 크기 = 권역 내 유역 수, % = 권역 평균 백분위 (빨강=건조 ~ 파랑=습윤)")
 
     with detail_col:
         if clicked_region:
@@ -106,7 +103,7 @@ with tab1:
                 st.session_state["jump_to_col"] = worst["col"]
                 st.info("상단의 'AI 위험예측' 탭을 클릭해 이어서 확인해주세요.")
         else:
-            st.info("왼쪽 지도에서 권역(원)을 클릭하면 상세 정보가 여기에 표시됩니다.")
+            st.info("위에서 권역을 선택하면 상세 정보가 여기에 표시됩니다.")
 
     with st.expander("권역별 상세 수치 보기"):
         st.dataframe(
