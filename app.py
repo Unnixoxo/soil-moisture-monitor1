@@ -75,9 +75,36 @@ with tab1:
 
     st.subheader("권역별 토양수분 현황 (실측)")
     ragg = region_summary(stats)
-    svg_html = build_korea_svg(ragg)
-    components.html(svg_html, height=560)
-    st.caption("원 크기 = 권역 내 유역 수, % = 권역 평균 백분위 (빨강=건조 ~ 파랑=습윤)")
+
+    # 지도의 원을 클릭하면 URL에 ?region=권역명 이 붙어서 여기로 전달됨
+    clicked_region = st.query_params.get("region")
+    if clicked_region not in ragg["region"].values:
+        clicked_region = None
+
+    map_col, detail_col = st.columns([3, 2])
+    with map_col:
+        svg_html = build_korea_svg(ragg, selected_region=clicked_region)
+        components.html(svg_html, height=560)
+        st.caption("원 크기 = 권역 내 유역 수, % = 권역 평균 백분위 (빨강=건조 ~ 파랑=습윤) · 원을 클릭하면 상세 정보가 표시됩니다")
+
+    with detail_col:
+        if clicked_region:
+            rrow = ragg[ragg["region"] == clicked_region].iloc[0]
+            worst = stats[stats["region"] == clicked_region].sort_values("pct").iloc[0]
+            st.markdown(f"#### {clicked_region} ({rrow['provinces']})")
+            st.metric("권역 평균 백분위", f"{rrow['avg_pct']}%")
+            st.metric("유역 수", f"{rrow['n']}개")
+            st.divider()
+            st.caption(f"이 권역에서 가장 건조한 유역: **{worst['name']}**")
+            wc1, wc2 = st.columns(2)
+            wc1.metric("표층", f"{worst['surface']} ㎥/㎥")
+            wc2.metric("백분위", f"하위 {worst['pct']}%")
+            st.caption(f"상태: {worst['status']} · 추세: {worst['trend_word']}")
+            if st.button("이 유역으로 AI 위험예측 탭에서 분석하기"):
+                st.session_state["jump_to_col"] = worst["col"]
+                st.info("상단의 'AI 위험예측' 탭을 클릭해 이어서 확인해주세요.")
+        else:
+            st.info("왼쪽 지도에서 권역(원)을 클릭하면 상세 정보가 여기에 표시됩니다.")
 
     with st.expander("권역별 상세 수치 보기"):
         st.dataframe(
@@ -96,7 +123,12 @@ with tab2:
         st.stop()
     default_col = matches.sort_values("pct").iloc[0]["col"]
     options = matches.assign(label=lambda d: d["region"] + " · " + d["name"])
-    selected_label = st.selectbox("분석 대상 유역", options["label"], index=0)
+    jump_col = st.session_state.get("jump_to_col")
+    if jump_col in options["col"].values:
+        default_idx = int(options.reset_index(drop=True).index[options.reset_index(drop=True)["col"] == jump_col][0])
+    else:
+        default_idx = 0
+    selected_label = st.selectbox("분석 대상 유역", options["label"], index=default_idx)
     row = options[options["label"] == selected_label].iloc[0]
 
     badge_color = LEVEL_COLOR[row["status"]]
