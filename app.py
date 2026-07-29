@@ -11,12 +11,12 @@ import glob
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
-import streamlit.components.v1 as components
 
 from data_processing import (
     FORECAST_DAYS,
     LEVELS,
     build_korea_svg,
+    build_ranking_html,
     chart_series,
     compute_stats,
     load_surface_rootzone,
@@ -77,33 +77,28 @@ with tab1:
     ragg = region_summary(stats)
 
     region_options = ["(선택 안 함)"] + list(ragg["region"])
-    picked = st.selectbox("권역 선택 (지도에서 강조 표시됩니다)", region_options, key="region_picker")
+    picked = st.selectbox("권역 선택", region_options, key="region_picker")
     clicked_region = picked if picked != "(선택 안 함)" else None
 
-    map_col, detail_col = st.columns([3, 2])
-    with map_col:
-        svg_html = build_korea_svg(ragg, selected_region=clicked_region)
-        components.html(svg_html, height=560)
-        st.caption("원 크기 = 권역 내 유역 수, % = 권역 평균 백분위 (빨강=건조 ~ 파랑=습윤)")
+    svg_html = build_korea_svg(ragg, selected_region=clicked_region)
+    st.components.v1.html(svg_html, height=560)
+    st.caption("원 크기 = 권역 내 유역 수, % = 권역 평균 백분위 (빨강=건조 ~ 파랑=습윤) · 위 드롭다운에서 권역을 선택하면 강조 표시됩니다")
 
-    with detail_col:
-        if clicked_region:
-            rrow = ragg[ragg["region"] == clicked_region].iloc[0]
-            worst = stats[stats["region"] == clicked_region].sort_values("pct").iloc[0]
-            st.markdown(f"#### {clicked_region} ({rrow['provinces']})")
-            st.metric("권역 평균 백분위", f"{rrow['avg_pct']}%")
-            st.metric("유역 수", f"{rrow['n']}개")
-            st.divider()
-            st.caption(f"이 권역에서 가장 건조한 유역: **{worst['name']}**")
-            wc1, wc2 = st.columns(2)
-            wc1.metric("표층", f"{worst['surface']} ㎥/㎥")
-            wc2.metric("백분위", f"하위 {worst['pct']}%")
-            st.caption(f"상태: {worst['status']} · 추세: {worst['trend_word']}")
-            if st.button("이 유역으로 AI 위험예측 탭에서 분석하기"):
-                st.session_state["jump_to_col"] = worst["col"]
-                st.info("상단의 'AI 위험예측' 탭을 클릭해 이어서 확인해주세요.")
-        else:
-            st.info("위에서 권역을 선택하면 상세 정보가 여기에 표시됩니다.")
+    if clicked_region:
+        rrow = ragg[ragg["region"] == clicked_region].iloc[0]
+        worst = stats[stats["region"] == clicked_region].sort_values("pct").iloc[0]
+        d1, d2, d3, d4 = st.columns(4)
+        d1.metric("선택 권역", clicked_region.replace("권역", ""))
+        d2.metric("권역 평균 백분위", f"{rrow['avg_pct']}%")
+        d3.metric("유역 수", f"{rrow['n']}개")
+        d4.metric("가장 건조한 유역", worst["name"])
+        wc1, wc2, wc3 = st.columns(3)
+        wc1.metric("표층", f"{worst['surface']} ㎥/㎥")
+        wc2.metric("백분위", f"하위 {worst['pct']}%")
+        wc3.metric("상태", worst["status"])
+        if st.button("이 유역으로 AI 위험예측 탭에서 분석하기"):
+            st.session_state["jump_to_col"] = worst["col"]
+            st.info("상단의 'AI 위험예측' 탭을 클릭해 이어서 확인해주세요.")
 
     with st.expander("권역별 상세 수치 보기"):
         st.dataframe(
@@ -222,13 +217,7 @@ with tab3:
     view.insert(0, "순위", view.index + 1)
 
     st.caption(f"{len(view)}개 유역 중 순위 표시")
-    st.dataframe(
-        view[["순위", "region", "name", "status", "surface", "pct", "trend_word"]].rename(columns={
-            "region": "권역", "name": "유역명", "status": "상태", "surface": "표층",
-            "pct": "백분위(%)", "trend_word": "추세",
-        }),
-        use_container_width=True, height=520, hide_index=True,
-    )
+    st.components.v1.html(build_ranking_html(view), height=560, scrolling=True)
 
 st.divider()
 st.caption(
