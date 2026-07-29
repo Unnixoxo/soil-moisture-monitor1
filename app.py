@@ -303,3 +303,13 @@ st.caption(
     "데이터 제공: 한국수자원조사기술원 · 활용 데이터: 주요 유역별 토양수분량 자료(표층·근권) · "
     "AI 분석은 실제 데이터를 근거로 생성되며, 예측·위험등급은 자체 통계 로직 기반 참고용입니다."
 )
+
+st.markdown(
+    '''
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px; padding-top:8px;">
+      <span style="font-size:12px; color:#94a3b8;">© 2026 유역안심 AI</span>
+      <img src="https://visitor-badge.laobi.icu/badge?page_id=yuyeok-ai-soil-moisture-monitor" style="height:20px;" alt="방문자 수"/>
+    </div>
+    ''',
+    unsafe_allow_html=True,
+)
