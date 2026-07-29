@@ -32,13 +32,13 @@ DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 # ── 프로토타입과 통일된 커스텀 스타일 ──────────────────────────────────
 st.markdown("""
 <style>
-  .block-container { padding-top: 2rem; max-width: 1180px; }
+  .block-container { padding-top: 3.5rem; max-width: 1180px; }
   #MainMenu, footer, header { visibility: visible; }
 
-  .ysa-header { display:flex; align-items:center; gap:12px; margin-bottom:4px; }
-  .ysa-logo { width:40px; height:40px; border-radius:10px; background:linear-gradient(135deg,#0f766e,#1e3a8a);
-              display:flex; align-items:center; justify-content:center; font-size:20px; }
-  .ysa-title { font-size:22px; font-weight:800; color:#0f172a; margin:0; }
+  .ysa-header { display:flex; align-items:center; gap:12px; margin:6px 0 10px; }
+  .ysa-logo { width:44px; height:44px; min-width:44px; border-radius:10px; background:linear-gradient(135deg,#0f766e,#1e3a8a);
+              display:flex; align-items:center; justify-content:center; font-size:20px; line-height:1; overflow:visible; }
+  .ysa-title { font-size:22px; font-weight:800; color:#0f172a; margin:0; line-height:1.3; }
 
   .ysa-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin:18px 0 26px; }
   @media (max-width:900px){ .ysa-grid{ grid-template-columns:repeat(2,1fr);} }
