@@ -140,7 +140,7 @@ with tab1:
     map_col, detail_col = st.columns([3, 2], gap="medium")
     with map_col:
         svg_html = build_korea_svg(ragg, selected_region=clicked_region)
-        st.components.v1.html(svg_html, height=560)
+        st.components.v1.html(svg_html, height=600)
         st.caption("원 크기 = 권역 내 유역 수, % = 권역 평균 백분위 (빨강=건조 ~ 파랑=습윤) · 위 드롭다운에서 권역을 선택하면 그 위치로 확대됩니다")
 
     with detail_col:
