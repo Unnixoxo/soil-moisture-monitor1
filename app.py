@@ -29,6 +29,40 @@ st.set_page_config(page_title="유역안심 AI", page_icon="💧", layout="wide"
 LEVEL_COLOR = {"정상": "#3b82f6", "관심": "#84cc16", "주의": "#eab308", "경계": "#f97316", "심각": "#dc2626"}
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
+# ── 프로토타입과 통일된 커스텀 스타일 ──────────────────────────────────
+st.markdown("""
+<style>
+  .block-container { padding-top: 2rem; max-width: 1180px; }
+  #MainMenu, footer, header { visibility: visible; }
+
+  .ysa-header { display:flex; align-items:center; gap:12px; margin-bottom:4px; }
+  .ysa-logo { width:40px; height:40px; border-radius:10px; background:linear-gradient(135deg,#0f766e,#1e3a8a);
+              display:flex; align-items:center; justify-content:center; font-size:20px; }
+  .ysa-title { font-size:22px; font-weight:800; color:#0f172a; margin:0; }
+
+  .ysa-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin:18px 0 26px; }
+  @media (max-width:900px){ .ysa-grid{ grid-template-columns:repeat(2,1fr);} }
+  .ysa-card { background:#fff; border:1px solid #e2e8f0; border-radius:14px; padding:16px 18px;
+              box-shadow:0 1px 3px rgba(15,23,42,0.04); }
+  .ysa-card-top { display:flex; justify-content:space-between; align-items:flex-start; }
+  .ysa-card-label { font-size:12px; color:#64748b; font-weight:500; }
+  .ysa-card-icon { width:30px; height:30px; border-radius:8px; background:#f0fdfa; display:flex;
+                    align-items:center; justify-content:center; font-size:15px; }
+  .ysa-card-value { font-size:24px; font-weight:700; color:#0f172a; margin-top:8px; }
+  .ysa-card-sub { font-size:12px; margin-top:6px; font-weight:600; }
+  .ysa-sub-down { color:#dc2626; } .ysa-sub-up { color:#2563eb; } .ysa-sub-neutral { color:#64748b; }
+
+  .ysa-detail-card { background:#fff; border:1px solid #e2e8f0; border-radius:14px; padding:20px; height:100%; }
+  .ysa-badge { display:inline-flex; align-items:center; gap:6px; padding:4px 12px; border-radius:999px;
+               font-size:12px; font-weight:700; }
+  .ysa-badge-dot { width:7px; height:7px; border-radius:50%; }
+  .ysa-detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:16px; }
+  .ysa-mini { background:#f8fafc; border-radius:10px; padding:10px 12px; }
+  .ysa-mini-label { font-size:11px; color:#64748b; }
+  .ysa-mini-value { font-size:15px; font-weight:700; color:#0f172a; margin-top:2px; }
+</style>
+""", unsafe_allow_html=True)
+
 
 # ── 데이터 로드 & 계산 (캐시) ──────────────────────────────────
 @st.cache_data(show_spinner="데이터를 불러오는 중...")
@@ -44,7 +78,13 @@ def get_data():
 
 surface, rootzone, stats, as_of = get_data()
 
-st.title("💧 유역안심 AI")
+st.markdown('''
+<div class="ysa-header">
+  <div class="ysa-logo">💧</div>
+  <div class="ysa-title">유역안심 AI</div>
+</div>
+''', unsafe_allow_html=True)
+
 if stats is None:
     st.error(
         "data/ 폴더에 xlsx 파일이 없습니다. 한국수자원조사기술원 「주요 유역별 토양수분량 자료」"
@@ -59,46 +99,92 @@ if as_of < surface["TIME"].max():
         icon="⚠️",
     )
 
-st.caption(f"데이터 기준일 **{as_of.date()}** · 표준유역 **{len(stats)}개** · 표층/근권 실측 기반")
+st.markdown(
+    f"<div style='color:#64748b; font-size:13px; margin:6px 0 4px;'>전국 유역의 토양건조 위험을 한눈에 확인하세요 · "
+    f"데이터 기준일 <b>{as_of.date()}</b> · 표준유역 <b>{len(stats)}개</b> · 표층/근권 실측 기반</div>",
+    unsafe_allow_html=True,
+)
 
 tab1, tab2, tab3 = st.tabs(["토양수분 현황", "AI 위험예측", "유역별 분석"])
 
 # ── 탭 1: 토양수분 현황 ──────────────────────────────────
 with tab1:
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("전국 평균 표층 토양수분량", f"{stats['surface'].mean():.3f} ㎥/㎥")
     concern = (stats["status"] != "정상").sum()
-    c2.metric("관심 이상 유역", f"{concern}개", f"{concern/len(stats)*100:.1f}%")
     high_risk = stats["status"].isin(["경계", "심각"]).sum()
-    c3.metric("경계·심각 유역", f"{high_risk}개")
-    c4.metric("데이터 기준일", str(as_of.date()))
 
-    st.subheader("권역별 토양수분 현황 (실측)")
+    st.markdown(f'''
+    <div class="ysa-grid">
+      <div class="ysa-card">
+        <div class="ysa-card-top"><span class="ysa-card-label">전국 평균 표층 토양수분량</span><span class="ysa-card-icon">💧</span></div>
+        <div class="ysa-card-value">{stats['surface'].mean():.3f} ㎥/㎥</div>
+        <div class="ysa-card-sub ysa-sub-neutral">850개 유역 평균</div>
+      </div>
+      <div class="ysa-card">
+        <div class="ysa-card-top"><span class="ysa-card-label">관심 이상 유역</span><span class="ysa-card-icon">⚠️</span></div>
+        <div class="ysa-card-value">{concern}개</div>
+        <div class="ysa-card-sub ysa-sub-down">전체의 {concern/len(stats)*100:.1f}%</div>
+      </div>
+      <div class="ysa-card">
+        <div class="ysa-card-top"><span class="ysa-card-label">경계·심각 유역</span><span class="ysa-card-icon">📈</span></div>
+        <div class="ysa-card-value">{high_risk}개</div>
+        <div class="ysa-card-sub ysa-sub-down">즉시 관리 필요</div>
+      </div>
+      <div class="ysa-card">
+        <div class="ysa-card-top"><span class="ysa-card-label">데이터 기준일</span><span class="ysa-card-icon">📅</span></div>
+        <div class="ysa-card-value" style="font-size:19px;">{as_of.date()}</div>
+        <div class="ysa-card-sub ysa-sub-neutral">한국수자원조사기술원 제공</div>
+      </div>
+    </div>
+    ''', unsafe_allow_html=True)
+
+    st.subheader("📍 권역별 토양수분 현황 (실측)")
     ragg = region_summary(stats)
 
     region_options = ["(선택 안 함)"] + list(ragg["region"])
     picked = st.selectbox("권역 선택", region_options, key="region_picker")
     clicked_region = picked if picked != "(선택 안 함)" else None
 
-    svg_html = build_korea_svg(ragg, selected_region=clicked_region)
-    st.components.v1.html(svg_html, height=560)
-    st.caption("원 크기 = 권역 내 유역 수, % = 권역 평균 백분위 (빨강=건조 ~ 파랑=습윤) · 위 드롭다운에서 권역을 선택하면 강조 표시됩니다")
+    map_col, detail_col = st.columns([3, 2], gap="medium")
+    with map_col:
+        svg_html = build_korea_svg(ragg, selected_region=clicked_region)
+        st.components.v1.html(svg_html, height=560)
+        st.caption("원 크기 = 권역 내 유역 수, % = 권역 평균 백분위 (빨강=건조 ~ 파랑=습윤) · 위 드롭다운에서 권역을 선택하면 그 위치로 확대됩니다")
 
-    if clicked_region:
-        rrow = ragg[ragg["region"] == clicked_region].iloc[0]
-        worst = stats[stats["region"] == clicked_region].sort_values("pct").iloc[0]
-        d1, d2, d3, d4 = st.columns(4)
-        d1.metric("선택 권역", clicked_region.replace("권역", ""))
-        d2.metric("권역 평균 백분위", f"{rrow['avg_pct']}%")
-        d3.metric("유역 수", f"{rrow['n']}개")
-        d4.metric("가장 건조한 유역", worst["name"])
-        wc1, wc2, wc3 = st.columns(3)
-        wc1.metric("표층", f"{worst['surface']} ㎥/㎥")
-        wc2.metric("백분위", f"하위 {worst['pct']}%")
-        wc3.metric("상태", worst["status"])
-        if st.button("이 유역으로 AI 위험예측 탭에서 분석하기"):
-            st.session_state["jump_to_col"] = worst["col"]
-            st.info("상단의 'AI 위험예측' 탭을 클릭해 이어서 확인해주세요.")
+    with detail_col:
+        if clicked_region:
+            rrow = ragg[ragg["region"] == clicked_region].iloc[0]
+            worst = stats[stats["region"] == clicked_region].sort_values("pct").iloc[0]
+            badge_hex = LEVEL_COLOR[worst["status"]]
+            st.markdown(f'''
+            <div class="ysa-detail-card">
+              <div style="font-size:11px; color:#94a3b8;">선택 권역</div>
+              <div style="font-size:19px; font-weight:800; color:#0f172a; margin:2px 0 10px;">{clicked_region.replace('권역','')} <span style="font-size:12px; font-weight:500; color:#64748b;">({rrow['provinces']})</span></div>
+              <div class="ysa-detail-grid">
+                <div class="ysa-mini"><div class="ysa-mini-label">권역 평균 백분위</div><div class="ysa-mini-value">{rrow['avg_pct']}%</div></div>
+                <div class="ysa-mini"><div class="ysa-mini-label">유역 수</div><div class="ysa-mini-value">{rrow['n']}개</div></div>
+              </div>
+              <div style="margin-top:16px; padding-top:14px; border-top:1px solid #f1f5f9;">
+                <div style="font-size:12px; color:#64748b; margin-bottom:8px;">이 권역에서 가장 건조한 유역</div>
+                <div style="font-size:16px; font-weight:800; color:#0f172a;">{worst['name']}
+                  <span class="ysa-badge" style="background:{badge_hex}18; color:{badge_hex}; margin-left:6px;"><span class="ysa-badge-dot" style="background:{badge_hex};"></span>{worst['status']}</span>
+                </div>
+                <div class="ysa-detail-grid">
+                  <div class="ysa-mini"><div class="ysa-mini-label">표층</div><div class="ysa-mini-value">{worst['surface']} ㎥/㎥</div></div>
+                  <div class="ysa-mini"><div class="ysa-mini-label">백분위</div><div class="ysa-mini-value">하위 {worst['pct']}%</div></div>
+                </div>
+              </div>
+            </div>
+            ''', unsafe_allow_html=True)
+            st.write("")
+            if st.button("이 유역으로 AI 위험예측 탭에서 분석하기", use_container_width=True):
+                st.session_state["jump_to_col"] = worst["col"]
+                st.info("상단의 'AI 위험예측' 탭을 클릭해 이어서 확인해주세요.")
+        else:
+            st.markdown('''
+            <div class="ysa-detail-card" style="display:flex; align-items:center; justify-content:center; min-height:300px; color:#94a3b8; font-size:13px; text-align:center;">
+              위에서 권역을 선택하면<br>상세 정보가 여기에 표시됩니다.
+            </div>
+            ''', unsafe_allow_html=True)
 
     with st.expander("권역별 상세 수치 보기"):
         st.dataframe(
