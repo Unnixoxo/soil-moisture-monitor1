@@ -92,13 +92,6 @@ if stats is None:
     )
     st.stop()
 
-if as_of < surface["TIME"].max():
-    st.warning(
-        f"⚠ 데이터 품질 참고: 원본 파일의 날짜 항목은 {surface['TIME'].max().date()}까지 있으나, "
-        f"실제 값은 {as_of.date()} 이후 결측 상태입니다. 이 화면은 값이 존재하는 마지막 시점을 기준일로 표시합니다.",
-        icon="⚠️",
-    )
-
 st.markdown(
     f"<div style='color:#64748b; font-size:13px; margin:6px 0 4px;'>전국 유역의 토양건조 위험을 한눈에 확인하세요 · "
     f"데이터 기준일 <b>{as_of.date()}</b> · 표준유역 <b>{len(stats)}개</b> · 표층/근권 실측 기반</div>",
