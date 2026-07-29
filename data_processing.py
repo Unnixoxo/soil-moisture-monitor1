@@ -188,9 +188,20 @@ def build_korea_svg(region_agg: pd.DataFrame, selected_region: str | None = None
         </g>
         ''')
 
+    # 권역이 선택되면 그 위치로 확대(줌인)된 viewBox 계산, 아니면 전국 전체 보기
+    full_w, full_h = 524, 631
+    if selected_region and selected_region in positions:
+        cx, cy = positions[selected_region]
+        zoom_w, zoom_h = 300, 361  # 원본과 동일 비율(524:631)로 확대
+        vb_x = max(0, min(cx - zoom_w / 2, full_w - zoom_w))
+        vb_y = max(0, min(cy - zoom_h / 2, full_h - zoom_h))
+        view_box = f"{vb_x} {vb_y} {zoom_w} {zoom_h}"
+    else:
+        view_box = f"0 0 {full_w} {full_h}"
+
     svg = f'''
     <div style="display:flex; justify-content:center; background:#fff;">
-    <svg viewBox="0 0 524 631" style="width:100%; max-width:460px;">
+    <svg viewBox="{view_box}" style="width:100%; max-width:460px; transition: all 0.3s ease;">
       {province_svg}
       {''.join(markers)}
     </svg>
