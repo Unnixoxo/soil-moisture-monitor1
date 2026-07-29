@@ -201,7 +201,7 @@ def build_korea_svg(region_agg: pd.DataFrame, selected_region: str | None = None
 
     svg = f'''
     <div style="display:flex; justify-content:center; background:#fff;">
-    <svg viewBox="{view_box}" style="width:100%; max-width:460px; transition: all 0.3s ease;">
+    <svg viewBox="{view_box}" style="width:100%; max-width:440px; aspect-ratio:524/631; display:block; transition: all 0.3s ease;">
       {province_svg}
       {''.join(markers)}
     </svg>
