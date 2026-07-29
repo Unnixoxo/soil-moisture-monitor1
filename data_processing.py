@@ -180,10 +180,12 @@ def build_korea_svg(region_agg: pd.DataFrame, selected_region: str | None = None
             r = 28
         stroke_w = 3 if active else 2
         markers.append(f'''
+        <g data-region="{name}">
           <circle cx="{x}" cy="{y}" r="{r}" fill="{color}" opacity="{1 if active else 0.85}" stroke="#fff" stroke-width="{stroke_w}"/>
           <text x="{x}" y="{y-30}" text-anchor="middle" font-size="15" font-weight="700" fill="#1e293b" font-family="sans-serif">{name.replace('권역','')}</text>
           <text x="{x}" y="{y-16}" text-anchor="middle" font-size="10" font-weight="500" fill="#64748b" font-family="sans-serif">({REGION_PROVINCES.get(name,'')})</text>
           <text x="{x}" y="{y+5}" text-anchor="middle" font-size="12" font-weight="700" fill="#fff" font-family="sans-serif">{pct}%</text>
+        </g>
         ''')
 
     svg = f'''
@@ -195,6 +197,45 @@ def build_korea_svg(region_agg: pd.DataFrame, selected_region: str | None = None
     </div>
     '''
     return svg
+
+
+def build_ranking_html(view: pd.DataFrame, max_height: int = 560) -> str:
+    """프로토타입과 동일한 스타일(색상 배지·화살표)의 순위표를 HTML로 렌더링합니다."""
+    rows_html = []
+    for _, r in view.iterrows():
+        badge_hex = _LEVEL_HEX[r["status"]]
+        if r["risk_up"]:
+            trend_html = f'<span style="color:#dc2626; font-weight:600;">↘ 건조화</span>'
+        else:
+            trend_html = f'<span style="color:#2563eb; font-weight:600;">↗ 안정/습윤화</span>'
+        rows_html.append(f'''
+        <tr style="border-bottom:1px solid #f1f5f9;">
+          <td style="padding:10px 8px; color:#94a3b8; font-family:monospace;">{r['순위']}</td>
+          <td style="padding:10px 8px; color:#64748b;">{r['region'].replace('권역','')}</td>
+          <td style="padding:10px 8px; font-weight:600; color:#1e293b;">{r['name']}</td>
+          <td style="padding:10px 8px;"><span style="display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; border:1px solid {badge_hex}44; background:{badge_hex}18; color:{badge_hex}; font-size:12px; font-weight:600;"><span style="width:6px; height:6px; border-radius:50%; background:{badge_hex};"></span>{r['status']}</span></td>
+          <td style="padding:10px 8px; color:#475569; font-family:monospace;">{r['surface']}</td>
+          <td style="padding:10px 8px; color:#475569; font-family:monospace;">{r['pct']}%</td>
+          <td style="padding:10px 8px;">{trend_html}</td>
+        </tr>
+        ''')
+
+    html = f'''
+    <div style="font-family:-apple-system,sans-serif; max-height:{max_height}px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:10px;">
+    <table style="width:100%; border-collapse:collapse; font-size:14px;">
+      <thead style="position:sticky; top:0; background:#fff; z-index:1;">
+        <tr style="text-align:left; font-size:12px; color:#94a3b8; border-bottom:1px solid #e2e8f0;">
+          <th style="padding:8px;">순위</th><th style="padding:8px;">권역</th><th style="padding:8px;">유역명</th>
+          <th style="padding:8px;">상태</th><th style="padding:8px;">표층</th><th style="padding:8px;">백분위</th><th style="padding:8px;">추세</th>
+        </tr>
+      </thead>
+      <tbody>
+        {''.join(rows_html)}
+      </tbody>
+    </table>
+    </div>
+    '''
+    return html
 
 
 def chart_series(surface: pd.DataFrame, rootzone: pd.DataFrame, col: str, as_of: pd.Timestamp, days: int = 60):
